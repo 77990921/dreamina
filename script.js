@@ -34,7 +34,7 @@ function createCube() {
                 const pointDiv = document.createElement('div');
                 pointDiv.className = 'point';
                 pointDiv.style.transform = `translate3d(${(x - 2) * 30}px, ${(y - 2) * 30}px, ${(z - 2) * 30}px)`; // 位置调整
-                pointDiv.style.backgroundColor = 'red'; // 设置交点的颜色
+                pointDiv.style.backgroundColor = 'rgb(35, 136, 255)'; // 设置交点的颜色
                 pointDiv.style.width = '5px'; // 设置交点的宽度为5px
                 pointDiv.style.height = '5px'; // 设置交点的高度为5px
                 pointDiv.style.borderRadius = '50%'; // 使交点为圆形
@@ -92,51 +92,58 @@ function updateImage(src) {
 function selectPoint(point) {
     if (selectedPoints.includes(point)) {
         selectedPoints = selectedPoints.filter(p => p !== point);
-        point.style.backgroundColor = 'red'; // 取消选择时恢复颜色
+        point.style.backgroundColor = "rgb(35, 136, 255)"; // 取消选择时恢复颜色
     } else {
         selectedPoints.push(point);
-        point.style.backgroundColor = 'blue'; // 选中时改变颜色
+        point.style.backgroundColor = "rgb(190, 105, 255)"; // 选中时改变颜色
     }
     drawLines(); // 绘制连线
 }
 
 // 绘制连线
 function drawLines() {
-    const svg = document.getElementById('line-svg');
+    const canvas = document.getElementById('line-canvas');
+    const ctx = canvas.getContext('2d');
     
-    svg.innerHTML = ''; // 清空之前的路径
+    // 清空 Canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 设置 SVG 的绝对定位
-    svg.style.position = 'absolute'; // 绝对定位
-    svg.style.top = '50%'; // 根据需要设置顶部位置
-    svg.style.left = '50%'; // 根据需要设置左侧位置
-    svg.style.transform = 'translate(-50%, -50%)'; // 确保 SVG 在中心
-
+    // 设置 Canvas 的大小
+    canvas.width = 2400;  // 设置 Canvas 宽度
+    canvas.height = 1200; // 设置 Canvas 高度
 
     if (selectedPoints.length > 0) {
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        const canvasRect = cubeContainer.getBoundingClientRect(); // 获取立方体容器的位置
+        ctx.beginPath();
 
         // 使用选中点的中心位置作为起始点
         const startPoint = selectedPoints[0].getBoundingClientRect();
-        const startX = startPoint.left - canvasRect.left + startPoint.width / 2;
-        const startY = startPoint.top - canvasRect.top + startPoint.height / 2;
-        let d = `M ${startX} ${startY}`; // 起始点
+        const startX = (startPoint.left + startPoint.width / 2);
+        const startY = (startPoint.top + startPoint.height / 2);
+        ctx.moveTo(startX, startY); // 起始点
 
-        for (let point of selectedPoints) {
-            const rect = point.getBoundingClientRect();
-            // 计算每个点的中心位置
-            const centerX = rect.left - canvasRect.left + rect.width / 2;
-            const centerY = rect.top - canvasRect.top + rect.height / 2;
-            d += ` L ${centerX} ${centerY}`; // 连接到每个选中点的中心
+        for (let i = 0; i < selectedPoints.length - 1; i++) {
+            const currentPoint = selectedPoints[i].getBoundingClientRect();
+            const nextPoint = selectedPoints[i + 1].getBoundingClientRect();
+
+            // 计算当前点和下一个点的中心位置
+            const currentX = (currentPoint.left + currentPoint.width / 2);
+            const currentY = (currentPoint.top + currentPoint.height / 2);
+            const nextX = (nextPoint.left + nextPoint.width / 2);
+            const nextY = (nextPoint.top + nextPoint.height / 2);
+
+            // 计算控制点
+            const controlX1 = currentX + (nextX - currentX) / 3; // 第一个控制点
+            const controlY1 = currentY; // 控制点在当前点的水平线上
+
+            const controlX2 = currentX + (nextX - currentX) * 2 / 3; // 第二个控制点
+            const controlY2 = nextY; // 控制点在下一个点的水平线上
+
+            ctx.bezierCurveTo(controlX1, controlY1, controlX2, controlY2, nextX, nextY); // 使用三次贝塞尔曲线
         }
 
-        path.setAttribute("d", d);
-        path.setAttribute("stroke", "rgba(0, 204, 255, 1)"); // 使用鲜艳的蓝色
-        path.setAttribute("stroke-width", "4");
-        path.setAttribute("fill", "none");
-        path.setAttribute("stroke-linecap", "round");
-        svg.appendChild(path); // 将路径添加到 SVG 中
+        ctx.strokeStyle = "rgba(215, 55, 255, 1)"; // 使用鲜艳的蓝色
+        ctx.lineWidth = 4;
+        ctx.stroke(); // 绘制路径
     }
 }
 
@@ -172,7 +179,7 @@ document.addEventListener('mouseup', () => {
 // 重置功能
 resetButton.addEventListener('click', () => {
     selectedPoints.forEach(point => {
-        point.style.backgroundColor = 'red'; // 恢复颜色
+        point.style.backgroundColor = "rgb(114, 250, 255)"; // 恢复颜色
     });
     selectedPoints = [];
     drawLines(); // 清除连线
@@ -182,7 +189,7 @@ resetButton.addEventListener('click', () => {
 document.addEventListener('wheel', (event) => {
     event.preventDefault(); // 防止页面滚动
     if (event.deltaY < 0) {
-        if (cubeScale < 3) {
+        if (cubeScale < 2) {
             cubeScale *= 1.1; // 放大
         }
     } else {
@@ -197,6 +204,7 @@ document.addEventListener('wheel', (event) => {
 
 // 处理图片上传
 const imageUpload = document.getElementById('image-upload');
+const fileNameDisplay = document.getElementById('file-name');
 
 // 在处理图片上传时调用
 imageUpload.addEventListener('change', (event) => {
@@ -209,6 +217,9 @@ imageUpload.addEventListener('change', (event) => {
             console.log("图片加载成功，src:", e.target.result); // 调试输出
         };
         reader.readAsDataURL(file); // 读取文件
+        fileNameDisplay.textContent = file.name; // 显示文件名
+    } else {
+        fileNameDisplay.textContent = ''; // 清空文件名
     }
 });
 
