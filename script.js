@@ -102,48 +102,41 @@ function selectPoint(point) {
 
 // 绘制连线
 function drawLines() {
-    const canvas = document.getElementById('line-canvas');
-    const ctx = canvas.getContext('2d');
+    const svg = document.getElementById('line-svg');
     
-    // 清空 Canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    svg.innerHTML = ''; // 清空之前的路径
 
-    // 设置 Canvas 的大小
-    canvas.width = 2400;  // 设置 Canvas 宽度
-    canvas.height = 1200; // 设置 Canvas 高度
+    // 设置 SVG 的绝对定位
+    svg.style.position = 'absolute'; // 绝对定位
+    svg.style.top = '50%'; // 根据需要设置顶部位置
+    svg.style.left = '50%'; // 根据需要设置左侧位置
+    svg.style.transform = 'translate(-50%, -50%)'; // 确保 SVG 在中心
+
 
     if (selectedPoints.length > 0) {
-        ctx.beginPath();
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        const canvasRect = cubeContainer.getBoundingClientRect(); // 获取立方体容器的位置
 
         // 使用选中点的中心位置作为起始点
         const startPoint = selectedPoints[0].getBoundingClientRect();
-        const startX = (startPoint.left + startPoint.width / 2);
-        const startY = (startPoint.top + startPoint.height / 2);
-        ctx.moveTo(startX, startY); // 起始点
+        const startX = startPoint.left - canvasRect.left + startPoint.width / 2;
+        const startY = startPoint.top - canvasRect.top + startPoint.height / 2;
+        let d = `M ${startX} ${startY}`; // 起始点
 
-        for (let i = 0; i < selectedPoints.length - 1; i++) {
-            const currentPoint = selectedPoints[i].getBoundingClientRect();
-            const nextPoint = selectedPoints[i + 1].getBoundingClientRect();
-
-            // 计算当前点和下一个点的中心位置
-            const currentX = (currentPoint.left + currentPoint.width / 2);
-            const currentY = (currentPoint.top + currentPoint.height / 2);
-            const nextX = (nextPoint.left + nextPoint.width / 2);
-            const nextY = (nextPoint.top + nextPoint.height / 2);
-
-            // 计算控制点
-            const controlX1 = currentX + (nextX - currentX) / 3; // 第一个控制点
-            const controlY1 = currentY; // 控制点在当前点的水平线上
-
-            const controlX2 = currentX + (nextX - currentX) * 2 / 3; // 第二个控制点
-            const controlY2 = nextY; // 控制点在下一个点的水平线上
-
-            ctx.bezierCurveTo(controlX1, controlY1, controlX2, controlY2, nextX, nextY); // 使用三次贝塞尔曲线
+        for (let point of selectedPoints) {
+            const rect = point.getBoundingClientRect();
+            // 计算每个点的中心位置
+            const centerX = rect.left - canvasRect.left + rect.width / 2;
+            const centerY = rect.top - canvasRect.top + rect.height / 2;
+            d += ` L ${centerX} ${centerY}`; // 连接到每个选中点的中心
         }
 
-        ctx.strokeStyle = "rgba(0, 204, 255, 1)"; // 使用鲜艳的蓝色
-        ctx.lineWidth = 4;
-        ctx.stroke(); // 绘制路径
+        path.setAttribute("d", d);
+        path.setAttribute("stroke", "rgba(0, 204, 255, 1)"); // 使用鲜艳的蓝色
+        path.setAttribute("stroke-width", "4");
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke-linecap", "round");
+        svg.appendChild(path); // 将路径添加到 SVG 中
     }
 }
 
@@ -189,7 +182,7 @@ resetButton.addEventListener('click', () => {
 document.addEventListener('wheel', (event) => {
     event.preventDefault(); // 防止页面滚动
     if (event.deltaY < 0) {
-        if (cubeScale < 2) {
+        if (cubeScale < 3) {
             cubeScale *= 1.1; // 放大
         }
     } else {
@@ -204,7 +197,6 @@ document.addEventListener('wheel', (event) => {
 
 // 处理图片上传
 const imageUpload = document.getElementById('image-upload');
-const fileNameDisplay = document.getElementById('file-name');
 
 // 在处理图片上传时调用
 imageUpload.addEventListener('change', (event) => {
@@ -217,9 +209,6 @@ imageUpload.addEventListener('change', (event) => {
             console.log("图片加载成功，src:", e.target.result); // 调试输出
         };
         reader.readAsDataURL(file); // 读取文件
-        fileNameDisplay.textContent = file.name; // 显示文件名
-    } else {
-        fileNameDisplay.textContent = ''; // 清空文件名
     }
 });
 

@@ -9,14 +9,8 @@
 <body>
     <div id="cube-container"></div>
     <button id="reset-button" style="display: none;">重置选择</button>
-    <div class="upload-container">
-        <input type="file" id="image-upload" accept="image/*" style="display: none;">
-        <label for="image-upload" class="upload-button">
-            <span class="upload-icon">📤</span> 上传图片
-        </label>
-        <span id="file-name" class="file-name"></span>
-    </div>
-    <canvas id="line-canvas" style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
+    <input type="file" id="image-upload" accept="image/*" style="margin: 20px 0;">
+    <svg id="line-svg" style="position: absolute; top: 0; left: 0; pointer-events: none;"></svg>
     <script src="script.js"></script>
 </body>
 </html> 
